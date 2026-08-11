@@ -1185,6 +1185,8 @@ int perturbations_indices(
   ppt->has_source_delta_idm = _FALSE_;
   ppt->has_source_delta_dcdm = _FALSE_;
   ppt->has_source_delta_fld = _FALSE_;
+  ppt->has_source_delta_sfdm_1 = _FALSE_;
+  ppt->has_source_delta_sfdm_2 = _FALSE_;
   ppt->has_source_delta_scf = _FALSE_;
   ppt->has_source_delta_dr = _FALSE_;
   ppt->has_source_delta_ur = _FALSE_;
@@ -1200,6 +1202,8 @@ int perturbations_indices(
   ppt->has_source_theta_idm = _FALSE_;
   ppt->has_source_theta_dcdm = _FALSE_;
   ppt->has_source_theta_fld = _FALSE_;
+  ppt->has_source_theta_sfdm_1 = _FALSE_;
+  ppt->has_source_theta_sfdm_2 = _FALSE_;
   ppt->has_source_theta_scf = _FALSE_;
   ppt->has_source_theta_dr = _FALSE_;
   ppt->has_source_theta_ur = _FALSE_;
@@ -1293,6 +1297,10 @@ int perturbations_indices(
           ppt->has_source_delta_dcdm = _TRUE_;
         if (pba->has_fld == _TRUE_)
           ppt->has_source_delta_fld = _TRUE_;
+        if (pba->has_sfdm_1 == _TRUE_)
+          ppt->has_source_delta_sfdm_1 = _TRUE_;
+        if (pba->has_sfdm_2 == _TRUE_)
+          ppt->has_source_delta_sfdm_2 = _TRUE_;
         if (pba->has_scf == _TRUE_)
           ppt->has_source_delta_scf = _TRUE_;
         if (pba->has_ur == _TRUE_)
@@ -1324,6 +1332,10 @@ int perturbations_indices(
           ppt->has_source_theta_dcdm = _TRUE_;
         if (pba->has_fld == _TRUE_)
           ppt->has_source_theta_fld = _TRUE_;
+        if (pba->has_sfdm_1 == _TRUE_)
+          ppt->has_source_theta_sfdm_1 = _TRUE_;
+        if (pba->has_sfdm_2 == _TRUE_)
+          ppt->has_source_theta_sfdm_2 = _TRUE_;
         if (pba->has_scf == _TRUE_)
           ppt->has_source_theta_scf = _TRUE_;
         if (pba->has_ur == _TRUE_)
@@ -1399,6 +1411,8 @@ int perturbations_indices(
       class_define_index(ppt->index_tp_delta_idm,  ppt->has_source_delta_idm, index_type,1);
       class_define_index(ppt->index_tp_delta_dcdm, ppt->has_source_delta_dcdm,index_type,1);
       class_define_index(ppt->index_tp_delta_fld,  ppt->has_source_delta_fld, index_type,1);
+      class_define_index(ppt->index_tp_delta_sfdm_1,ppt->has_source_delta_sfdm_1,index_type,1);
+      class_define_index(ppt->index_tp_delta_sfdm_2,ppt->has_source_delta_sfdm_2,index_type,1);
       class_define_index(ppt->index_tp_delta_scf,  ppt->has_source_delta_scf, index_type,1);
       class_define_index(ppt->index_tp_delta_dr,   ppt->has_source_delta_dr,  index_type,1);
       class_define_index(ppt->index_tp_delta_ur,   ppt->has_source_delta_ur,  index_type,1);
@@ -1413,6 +1427,8 @@ int perturbations_indices(
       class_define_index(ppt->index_tp_theta_idm,  ppt->has_source_theta_idm, index_type,1);
       class_define_index(ppt->index_tp_theta_dcdm, ppt->has_source_theta_dcdm,index_type,1);
       class_define_index(ppt->index_tp_theta_fld,  ppt->has_source_theta_fld, index_type,1);
+      class_define_index(ppt->index_tp_theta_sfdm_1,ppt->has_source_theta_sfdm_1,index_type,1);
+      class_define_index(ppt->index_tp_theta_sfdm_2,ppt->has_source_theta_sfdm_2,index_type,1);
       class_define_index(ppt->index_tp_theta_scf,  ppt->has_source_theta_scf, index_type,1);
       class_define_index(ppt->index_tp_theta_dr,   ppt->has_source_theta_dr,  index_type,1);
       class_define_index(ppt->index_tp_theta_ur,   ppt->has_source_theta_ur,  index_type,1);
