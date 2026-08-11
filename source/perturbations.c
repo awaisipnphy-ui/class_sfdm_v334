@@ -3961,6 +3961,16 @@ int perturbations_vector_init(
       class_define_index(ppv->index_pt_Gamma_fld,pba->has_fld,index_pt,1); /* Gamma variable of PPF scheme */
     }
 
+    /* Scalar Field Dark Matter 1 */
+    class_define_index(ppv->index_pt_omega_sfdm_1,pba->has_sfdm_1,index_pt,1);
+    class_define_index(ppv->index_pt_delta_sfdm_1,pba->has_sfdm_1,index_pt,1);
+    class_define_index(ppv->index_pt_delta1_sfdm_1,pba->has_sfdm_1,index_pt,1);
+
+    /* Scalar Field Dark Matter 2 */
+    class_define_index(ppv->index_pt_omega_sfdm_2,pba->has_sfdm_2,index_pt,1);
+    class_define_index(ppv->index_pt_delta_sfdm_2,pba->has_sfdm_2,index_pt,1);
+    class_define_index(ppv->index_pt_delta1_sfdm_2,pba->has_sfdm_2,index_pt,1);
+
     /* scalar field */
 
     class_define_index(ppv->index_pt_phi_scf,pba->has_scf,index_pt,1); /* scalar field density */
