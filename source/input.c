@@ -533,6 +533,7 @@ int input_shooting(struct file_content * pfc,
                                        "Neff",
                                        "Omega_dcdmdr",
                                        "omega_dcdmdr",
+                                       "Omega_sfdm_1",
                                        "Omega_scf",
                                        "Omega_ini_dcdm",
                                        "omega_ini_dcdm"};
@@ -543,6 +544,7 @@ int input_shooting(struct file_content * pfc,
                                         "N_ur",                     /* unknown param for target 'Neff' */
                                         "Omega_ini_dcdm",           /* unknown param for target 'Omega_dcdmd' */
                                         "omega_ini_dcdm",           /* unknown param for target 'omega_dcdmdr' */
+                                        "sfdm_shooting_parameter_1",/* unknown param for target 'Omega_sfdm_1' */
                                         "scf_shooting_parameter",   /* unknown param for target 'Omega_scf' */
                                         "Omega_dcdmdr",             /* unknown param for target 'Omega_ini_dcdm' */
                                         "omega_dcdmdr"};             /* unknown param for target 'omega_ini_dcdm' */
@@ -555,6 +557,7 @@ int input_shooting(struct file_content * pfc,
                                         cs_background,     /* computation stage for target 'Neff' */
                                         cs_background,     /* computation stage for target 'Omega_dcdmdr' */
                                         cs_background,     /* computation stage for target 'omega_dcdmdr' */
+                                        cs_background,     /* computation stage for target 'Omega_sfdm_1' */
                                         cs_background,     /* computation stage for target 'Omega_scf' */
                                         cs_background,     /* computation stage for target 'Omega_ini_dcdm' */
                                         cs_background};     /* computation stage for target 'omega_ini_dcdm' */
@@ -876,6 +879,7 @@ int input_needs_shooting_for_target(struct file_content * pfc,
   switch (target_name){
   case Omega_dcdmdr:
   case omega_dcdmdr:
+  case Omega_sfdm_1:
   case Omega_scf:
   case Omega_ini_dcdm:
   case omega_ini_dcdm:
@@ -1231,6 +1235,11 @@ int input_get_guess(double *xguess,
       xguess[index_guess] = pfzw->target_value[index_guess]/ba.h/ba.h/a_decay;
       dxdy[index_guess] = 1./a_decay/ba.h/ba.h;
       break;
+    case Omega_sfdm_1:
+      /* Use the current tuning parameter as the initial shooting guess. */
+      xguess[index_guess] = ba.sfdm_parameters_1[ba.sfdm_tuning_index_1];
+      dxdy[index_guess] = 1.;
+      break;
     case Omega_scf:
       /* *
        * This guess is arbitrary, something nice using WKB should be implemented.
@@ -1476,6 +1485,10 @@ int input_try_unknown_parameters(double * unknown_parameter,
       else
         rho_dr_today = 0.;
       output[i] = (rho_dcdm_today+rho_dr_today)/(ba.H0*ba.H0)-pfzw->target_value[i]/ba.h/ba.h;
+      break;
+    case Omega_sfdm_1:
+      output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_sfdm_1]/(ba.H0*ba.H0)
+        -ba.Omega0_sfdm_1;
       break;
     case Omega_scf:
       /** In case scalar field is used to fill, pba->Omega0_scf is not equal to pfzw->target_value[i].*/
@@ -2370,6 +2383,7 @@ int input_read_parameters_species(struct file_content * pfc,
   double f_cdm=1., f_idm=0.;
   short has_m_budget = _FALSE_, has_cdm_userdefined = _FALSE_;
   double Omega_m_remaining = 0.;
+  double theta_ini_sfdm_1, a_osc_sfdm_1;
 
 
   sigma_B = 2.*pow(_PI_,5.)*pow(_k_B_,4.)/15./pow(_h_P_,3.)/pow(_c_,2);  // [W/(m^2 K^4) = Kg/(K^4 s^3)]
@@ -3150,6 +3164,101 @@ int input_read_parameters_species(struct file_content * pfc,
 
   /* ** ADDITIONAL SPECIES ** */
 
+  /** 7.3) Quadratic scalar-field dark matter */
+  class_call(parser_read_double(pfc,"Omega_sfdm_1",&param1,&flag1,errmsg),
+             errmsg,
+             errmsg);
+  class_call(parser_read_double(pfc,"omega_sfdm_1",&param2,&flag2,errmsg),
+             errmsg,
+             errmsg);
+  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_),
+             errmsg,
+             "You can only enter one of 'Omega_sfdm_1' or 'omega_sfdm_1'.");
+  if (flag1 == _TRUE_) {
+    pba->Omega0_sfdm_1 = param1;
+  }
+  if (flag2 == _TRUE_) {
+    pba->Omega0_sfdm_1 = param2/pba->h/pba->h;
+  }
+  class_test(pba->Omega0_sfdm_1 < 0.,
+             errmsg,
+             "You cannot set the scalar-field dark-matter density to a negative value.");
+
+  if (pba->Omega0_sfdm_1 > 0.) {
+    class_call(parser_read_list_of_doubles(pfc,
+                                           "sfdm_parameters_1",
+                                           &(pba->sfdm_parameters_size_1),
+                                           &(pba->sfdm_parameters_1),
+                                           &flag1,
+                                           errmsg),
+               errmsg,
+               errmsg);
+    class_test(flag1 == _FALSE_,
+               errmsg,
+               "When 'Omega_sfdm_1' is non-zero, you must provide 'sfdm_parameters_1'.");
+    class_test(pba->sfdm_parameters_size_1 < 2,
+               errmsg,
+               "The quadratic SFDM implementation needs at least two entries in 'sfdm_parameters_1': log10(m/eV) and lambda=0.");
+
+    class_read_int("sfdm_tuning_index_1",pba->sfdm_tuning_index_1);
+    class_test((pba->sfdm_tuning_index_1 < 0) ||
+               (pba->sfdm_tuning_index_1 >= pba->sfdm_parameters_size_1),
+               errmsg,
+               "The SFDM tuning index %d is outside 'sfdm_parameters_1', which has %d entries.",
+               pba->sfdm_tuning_index_1,
+               pba->sfdm_parameters_size_1);
+    class_test(pba->sfdm_tuning_index_1 == 1,
+               errmsg,
+               "Index 1 is the potential parameter lambda and cannot be used as the shooting index in the quadratic-only port.");
+
+    class_read_double("sfdm_shooting_parameter_1",
+                      pba->sfdm_parameters_1[pba->sfdm_tuning_index_1]);
+
+    class_test(pba->sfdm_parameters_1[1] != 0.,
+               errmsg,
+               "This first validated port supports only the quadratic potential, which requires sfdm_parameters_1[1] = 0.");
+
+    theta_ini_sfdm_1 = 0.4*15.64*pow(10.,pba->sfdm_parameters_1[0])
+      /(sqrt(pba->Omega0_g+pba->Omega0_ur)*pba->H0);
+    class_test((theta_ini_sfdm_1 <= 0.) || !isfinite(theta_ini_sfdm_1),
+               errmsg,
+               "The quadratic SFDM initial angle is not finite and positive. Check the mass, H0, and radiation density.");
+
+    a_osc_sfdm_1 = sqrt((0.5*_PI_/theta_ini_sfdm_1)
+                        /sqrt(1.+pow(_PI_,2)/36.));
+    class_test((a_osc_sfdm_1 <= 0.) || !isfinite(a_osc_sfdm_1),
+               errmsg,
+               "The quadratic SFDM oscillation scale factor is not finite and positive.");
+
+    pba->theta_ini_sfdm_1 = theta_ini_sfdm_1;
+    pba->alpha_ini_sfdm_1 =
+      pba->sfdm_parameters_1[pba->sfdm_tuning_index_1]
+      +log(pba->Omega0_sfdm_1*1.e-14
+           /(pow(a_osc_sfdm_1,3.)*(pba->Omega0_g+pba->Omega0_ur)));
+    class_test(!isfinite(pba->alpha_ini_sfdm_1),
+               errmsg,
+               "The quadratic SFDM initial logarithmic density is not finite.");
+
+    class_read_flag("attractor_ic_sfdm_1",pba->attractor_ic_sfdm_1);
+    if (pba->attractor_ic_sfdm_1 == _TRUE_) {
+      pba->y1_ini_sfdm_1 = 5.*pba->theta_ini_sfdm_1;
+    }
+    else {
+      class_test(pba->sfdm_parameters_size_1 < 4,
+                 errmsg,
+                 "Without SFDM attractor initial conditions, entry 3 of 'sfdm_parameters_1' must provide the initial y1 value.");
+      pba->y1_ini_sfdm_1 = pba->sfdm_parameters_1[3];
+    }
+
+    if (has_m_budget == _TRUE_) {
+      class_test(Omega_m_remaining < pba->Omega0_sfdm_1,
+                 errmsg,
+                 "Too much matter density: only %e remains in Omega_m, but Omega_sfdm_1=%e was requested.",
+                 Omega_m_remaining,
+                 pba->Omega0_sfdm_1);
+      Omega_m_remaining -= pba->Omega0_sfdm_1;
+    }
+  }
 
   /** 7.3) Final consistency checks for dark matter species */
 
@@ -3226,6 +3335,7 @@ int input_read_parameters_species(struct file_content * pfc,
   Omega_tot += pba->Omega0_dcdmdr;
   Omega_tot += pba->Omega0_idr;
   Omega_tot += pba->Omega0_ncdm_tot;
+  Omega_tot += pba->Omega0_sfdm_1;
   /* Step 1 */
   if (flag1 == _TRUE_){
     pba->Omega0_lambda = param1;
