@@ -396,6 +396,10 @@ int background_functions(
   int n_ncdm;
   /* fluid's time-dependent equation of state parameter */
   double w_fld, dw_over_da, integral_fld;
+  /* quadratic scalar-field dark-matter quantities */
+  double theta_sfdm_1, alpha_sfdm_1, Omega_sfdm_1;
+  double rho_other, rho_sfdm_1, p_sfdm_1, w_sfdm_1;
+  double theta_prime_sfdm_1, dw_dtheta_sfdm_1, cutoff_tanh_sfdm_1;
   /* scalar field quantities */
   double phi, phi_prime;
   /* Since we only know a_prime_over_a after we have rho_tot,
@@ -570,6 +574,52 @@ int background_functions(
     rho_tot += pvecback[pba->index_bg_rho_idr];
     p_tot += (1./3.) * pvecback[pba->index_bg_rho_idr];
     rho_r += pvecback[pba->index_bg_rho_idr];
+  }
+
+  /* Quadratic scalar-field dark matter.  The integrated variable alpha is
+     ln(Omega_sfdm), i.e. alpha=2 beta in Eqs. (5)-(9) of arXiv:2307.05600. */
+  if (pba->has_sfdm_1 == _TRUE_) {
+    theta_sfdm_1 = pvecback_B[pba->index_bi_theta_sfdm_1];
+    alpha_sfdm_1 = pvecback_B[pba->index_bi_alpha_sfdm_1];
+    Omega_sfdm_1 = exp(alpha_sfdm_1);
+
+    class_test(!isfinite(theta_sfdm_1) ||
+               !isfinite(pvecback_B[pba->index_bi_y1_sfdm_1]) ||
+               !isfinite(alpha_sfdm_1) ||
+               !isfinite(Omega_sfdm_1),
+               pba->error_message,
+               "non-finite quadratic SFDM background variable");
+    class_test((Omega_sfdm_1 <= 0.) || (Omega_sfdm_1 >= 1.),
+               pba->error_message,
+               "Omega_sfdm_1(a) = %e is outside the physical interval (0,1)",
+               Omega_sfdm_1);
+
+    /* Equation (9): rho_other contains every component except SFDM. */
+    rho_other = rho_tot;
+    rho_sfdm_1 = Omega_sfdm_1/(1.-Omega_sfdm_1)*rho_other;
+    w_sfdm_1 = -cos_sfdm(pba,theta_sfdm_1);
+    p_sfdm_1 = w_sfdm_1*rho_sfdm_1;
+
+    pvecback[pba->index_bg_theta_sfdm_1] = theta_sfdm_1;
+    pvecback[pba->index_bg_y1_sfdm_1] = pvecback_B[pba->index_bi_y1_sfdm_1];
+    pvecback[pba->index_bg_alpha_sfdm_1] = alpha_sfdm_1;
+    pvecback[pba->index_bg_rho_sfdm_1] = rho_sfdm_1;
+    pvecback[pba->index_bg_p_sfdm_1] = p_sfdm_1;
+
+    rho_tot += rho_sfdm_1;
+    p_tot += p_sfdm_1;
+    rho_r += 3.*p_sfdm_1;
+    rho_m += rho_sfdm_1-3.*p_sfdm_1;
+
+    /* Add d p_sfdm/d ln(a), including the smooth cutoff derivative. */
+    theta_prime_sfdm_1 = -3.*sin_sfdm(pba,theta_sfdm_1)
+      +pvecback_B[pba->index_bi_y1_sfdm_1];
+    cutoff_tanh_sfdm_1 = tanh(theta_sfdm_1-30.*_PI_);
+    dw_dtheta_sfdm_1 =
+      0.5*(1.-cutoff_tanh_sfdm_1*cutoff_tanh_sfdm_1)*cos(theta_sfdm_1)
+      +sin_sfdm(pba,theta_sfdm_1);
+    dp_dloga += (dw_dtheta_sfdm_1*theta_prime_sfdm_1
+                 -3.*w_sfdm_1*(1.+w_sfdm_1))*rho_sfdm_1;
   }
 
   /** - compute expansion rate H from Friedmann equation: this is the
@@ -990,6 +1040,8 @@ int background_indices(
   pba->has_ncdm = _FALSE_;
   pba->has_dcdm = _FALSE_;
   pba->has_dr = _FALSE_;
+  pba->has_sfdm_1 = _FALSE_;
+  pba->has_sfdm_2 = _FALSE_;
   pba->has_scf = _FALSE_;
   pba->has_lambda = _FALSE_;
   pba->has_fld = _FALSE_;
@@ -1011,6 +1063,13 @@ int background_indices(
     pba->has_dcdm = _TRUE_;
     if (pba->Gamma_dcdm != 0.)
       pba->has_dr = _TRUE_;
+  }
+
+  if (pba->Omega0_sfdm_1 != 0.) {
+    class_test(pba->sgnK != 0,
+               pba->error_message,
+               "the first validated quadratic SFDM port requires Omega_k = 0");
+    pba->has_sfdm_1 = _TRUE_;
   }
 
   if (pba->Omega0_scf != 0.)
@@ -1072,6 +1131,13 @@ int background_indices(
 
   /* - index for dr */
   class_define_index(pba->index_bg_rho_dr,pba->has_dr,index_bg,1);
+
+  /* - indices for the first quadratic scalar-field dark-matter species */
+  class_define_index(pba->index_bg_theta_sfdm_1,pba->has_sfdm_1,index_bg,1);
+  class_define_index(pba->index_bg_y1_sfdm_1,pba->has_sfdm_1,index_bg,1);
+  class_define_index(pba->index_bg_alpha_sfdm_1,pba->has_sfdm_1,index_bg,1);
+  class_define_index(pba->index_bg_rho_sfdm_1,pba->has_sfdm_1,index_bg,1);
+  class_define_index(pba->index_bg_p_sfdm_1,pba->has_sfdm_1,index_bg,1);
 
   /* - indices for scalar field */
   class_define_index(pba->index_bg_phi_scf,pba->has_scf,index_bg,1);
@@ -1174,6 +1240,11 @@ int background_indices(
 
   /* -> energy density in fluid */
   class_define_index(pba->index_bi_rho_fld,pba->has_fld,index_bi,1);
+
+  /* -> first quadratic scalar-field dark-matter variables */
+  class_define_index(pba->index_bi_theta_sfdm_1,pba->has_sfdm_1,index_bi,1);
+  class_define_index(pba->index_bi_y1_sfdm_1,pba->has_sfdm_1,index_bi,1);
+  class_define_index(pba->index_bi_alpha_sfdm_1,pba->has_sfdm_1,index_bi,1);
 
   /* -> scalar field and its derivative wrt conformal time (Zuma) */
   class_define_index(pba->index_bi_phi_scf,pba->has_scf,index_bi,1);
@@ -2159,6 +2230,7 @@ int background_initial_conditions(
   double scf_lambda;
   double rho_fld_today;
   double w_fld,dw_over_da_fld,integral_fld;
+  double sfdm_a_ratio;
 
   /** - fix initial value of \f$ a \f$ */
   a = ppr->a_ini_over_a_today_default;
@@ -2264,6 +2336,45 @@ int background_initial_conditions(
     /* rho_fld at initial time */
     pvecback_integration[pba->index_bi_rho_fld] = rho_fld_today * exp(integral_fld);
 
+  }
+
+  /** - Set quadratic SFDM initial conditions.  The input module stores
+   * reference values at a=1.e-14, as used in Eqs. (18)-(20) of
+   * arXiv:2307.05600.  Rescale the radiation-era attractor if CLASS had
+   * to start at an earlier value of a (for example because of ncdm). */
+  if (pba->has_sfdm_1 == _TRUE_) {
+    sfdm_a_ratio = a/1.e-14;
+
+    if (pba->attractor_ic_sfdm_1 == _TRUE_) {
+      pvecback_integration[pba->index_bi_theta_sfdm_1] =
+        pba->theta_ini_sfdm_1*sfdm_a_ratio*sfdm_a_ratio;
+      pvecback_integration[pba->index_bi_y1_sfdm_1] =
+        5.*pvecback_integration[pba->index_bi_theta_sfdm_1];
+      pvecback_integration[pba->index_bi_alpha_sfdm_1] =
+        pba->alpha_ini_sfdm_1+4.*log(sfdm_a_ratio);
+    }
+    else {
+      class_test(fabs(sfdm_a_ratio-1.) > 1.e-8,
+                 pba->error_message,
+                 "non-attractor SFDM initial conditions are defined at a=1.e-14, but CLASS selected a=%e",
+                 a);
+      pvecback_integration[pba->index_bi_theta_sfdm_1] = pba->theta_ini_sfdm_1;
+      pvecback_integration[pba->index_bi_y1_sfdm_1] = pba->y1_ini_sfdm_1;
+      pvecback_integration[pba->index_bi_alpha_sfdm_1] = pba->alpha_ini_sfdm_1;
+    }
+
+    class_test(!isfinite(pvecback_integration[pba->index_bi_theta_sfdm_1]) ||
+               !isfinite(pvecback_integration[pba->index_bi_y1_sfdm_1]) ||
+               !isfinite(pvecback_integration[pba->index_bi_alpha_sfdm_1]),
+               pba->error_message,
+               "non-finite quadratic SFDM initial conditions: theta=%e, y1=%e, alpha=%e",
+               pvecback_integration[pba->index_bi_theta_sfdm_1],
+               pvecback_integration[pba->index_bi_y1_sfdm_1],
+               pvecback_integration[pba->index_bi_alpha_sfdm_1]);
+    class_test(0.5*pvecback_integration[pba->index_bi_y1_sfdm_1] >= 1.e-2,
+               pba->error_message,
+               "quadratic SFDM starts too late: m/H=%e must be below 1.e-2",
+               0.5*pvecback_integration[pba->index_bi_y1_sfdm_1]);
   }
 
   /** - Fix initial value of \f$ \phi, \phi' \f$
@@ -2468,6 +2579,12 @@ int background_output_titles(
   class_store_columntitle(titles,"(.)rho_dcdm",pba->has_dcdm);
   class_store_columntitle(titles,"(.)rho_dr",pba->has_dr);
 
+  class_store_columntitle(titles,"(.)rho_sfdm_1",pba->has_sfdm_1);
+  class_store_columntitle(titles,"(.)p_sfdm_1",pba->has_sfdm_1);
+  class_store_columntitle(titles,"theta_sfdm_1",pba->has_sfdm_1);
+  class_store_columntitle(titles,"y1_sfdm_1",pba->has_sfdm_1);
+  class_store_columntitle(titles,"alpha_sfdm_1",pba->has_sfdm_1);
+
   class_store_columntitle(titles,"(.)rho_scf",pba->has_scf);
   class_store_columntitle(titles,"(.)p_scf",pba->has_scf);
   class_store_columntitle(titles,"(.)p_prime_scf",pba->has_scf);
@@ -2543,6 +2660,12 @@ int background_output_data(
     class_store_double(dataptr,pvecback[pba->index_bg_rho_crit],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_dcdm],pba->has_dcdm,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_dr],pba->has_dr,storeidx);
+
+    class_store_double(dataptr,pvecback[pba->index_bg_rho_sfdm_1],pba->has_sfdm_1,storeidx);
+    class_store_double(dataptr,pvecback[pba->index_bg_p_sfdm_1],pba->has_sfdm_1,storeidx);
+    class_store_double(dataptr,pvecback[pba->index_bg_theta_sfdm_1],pba->has_sfdm_1,storeidx);
+    class_store_double(dataptr,pvecback[pba->index_bg_y1_sfdm_1],pba->has_sfdm_1,storeidx);
+    class_store_double(dataptr,pvecback[pba->index_bg_alpha_sfdm_1],pba->has_sfdm_1,storeidx);
 
     class_store_double(dataptr,pvecback[pba->index_bg_rho_scf],pba->has_scf,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_p_scf],pba->has_scf,storeidx);
@@ -2668,6 +2791,19 @@ int background_derivs(
   if (pba->has_fld == _TRUE_) {
     /** - Compute fld density \f$ d\rho/dloga = -3 (1+w_{fld}(a)) \rho \f$ */
     dy[pba->index_bi_rho_fld] = -3.*(1.+pvecback[pba->index_bg_w_fld])*y[pba->index_bi_rho_fld];
+  }
+
+  if (pba->has_sfdm_1 == _TRUE_) {
+    /** - Quadratic SFDM equations (7a-c), written for alpha=2 beta. */
+    dy[pba->index_bi_theta_sfdm_1] =
+      -3.*sin_sfdm(pba,y[pba->index_bi_theta_sfdm_1])
+      +y[pba->index_bi_y1_sfdm_1];
+    dy[pba->index_bi_y1_sfdm_1] =
+      1.5*(1.+pvecback[pba->index_bg_p_tot]/pvecback[pba->index_bg_rho_tot])
+      *y[pba->index_bi_y1_sfdm_1];
+    dy[pba->index_bi_alpha_sfdm_1] =
+      3.*(pvecback[pba->index_bg_p_tot]/pvecback[pba->index_bg_rho_tot]
+          +cos_sfdm(pba,y[pba->index_bi_theta_sfdm_1]));
   }
 
   if (pba->has_scf == _TRUE_) {
@@ -2826,6 +2962,13 @@ int background_output_budget(
       class_print_species("Decaying Cold Dark Matter",dcdm);
       budget_matter+=pba->Omega0_dcdm;
     }
+    if (pba->has_sfdm_1 == _TRUE_) {
+      printf("-> %-30s Omega = %-15g , omega = %-15g\n",
+             "Scalar Field Dark Matter",
+             pba->Omega0_sfdm_1,
+             pba->Omega0_sfdm_1*pba->h*pba->h);
+      budget_matter+=pba->Omega0_sfdm_1;
+    }
 
     if (pba->N_ncdm > 0) {
       printf(" ---> Non-Cold Dark Matter Species (incl. massive neutrinos)\n");
@@ -2889,6 +3032,37 @@ int background_output_budget(
   }
 
   return _SUCCESS_;
+}
+
+/**
+ * Smooth trigonometric cutoff of Eq. (22) in arXiv:2307.05600.
+ * The validated starting choice theta_star=30 pi is an integer multiple of
+ * pi, as recommended by Eqs. (34)-(35) and the numerical tests in the paper.
+ */
+double cos_sfdm(
+                struct background *pba,
+                double theta_sfdm
+                ) {
+
+  const double theta_star = 30.*_PI_;
+  double cutoff;
+
+  (void)pba;
+  cutoff = 0.5*(1.-tanh(theta_sfdm-theta_star));
+  return cutoff*cos(theta_sfdm);
+}
+
+double sin_sfdm(
+                struct background *pba,
+                double theta_sfdm
+                ) {
+
+  const double theta_star = 30.*_PI_;
+  double cutoff;
+
+  (void)pba;
+  cutoff = 0.5*(1.-tanh(theta_sfdm-theta_star));
+  return cutoff*sin(theta_sfdm);
 }
 
 /**
