@@ -247,6 +247,8 @@ struct perturbations
   short has_source_delta_idr;  /**< do we need source for delta of interacting dark radiation? */
   short has_source_delta_dcdm; /**< do we need source for delta of DCDM? */
   short has_source_delta_fld;  /**< do we need source for delta of dark energy? */
+  short has_source_delta_sfdm_1; /**< do we need the first SFDM density source? */
+  short has_source_delta_sfdm_2; /**< do we need the second SFDM density source? */
   short has_source_delta_scf;  /**< do we need source for delta from scalar field? */
   short has_source_delta_dr;   /**< do we need source for delta of decay radiation? */
   short has_source_delta_ur;   /**< do we need source for delta of ultra-relativistic neutrinos/relics? */
@@ -261,6 +263,8 @@ struct perturbations
   short has_source_theta_idr;  /**< do we need source for theta of interacting dark radiation? */
   short has_source_theta_dcdm; /**< do we need source for theta of DCDM? */
   short has_source_theta_fld;  /**< do we need source for theta of dark energy? */
+  short has_source_theta_sfdm_1; /**< do we need the first SFDM velocity source? */
+  short has_source_theta_sfdm_2; /**< do we need the second SFDM velocity source? */
   short has_source_theta_scf;  /**< do we need source for theta of scalar field? */
   short has_source_theta_dr;   /**< do we need source for theta of ultra-relativistic neutrinos/relics? */
   short has_source_theta_ur;   /**< do we need source for theta of ultra-relativistic neutrinos/relics? */
@@ -294,6 +298,8 @@ struct perturbations
   int index_tp_delta_idm; /**< index value for delta of interacting dark matter */
   int index_tp_delta_dcdm;/**< index value for delta of DCDM */
   int index_tp_delta_fld;  /**< index value for delta of dark energy */
+  int index_tp_delta_sfdm_1; /**< index value for first SFDM density */
+  int index_tp_delta_sfdm_2; /**< index value for second SFDM density */
   int index_tp_delta_scf;  /**< index value for delta of scalar field */
   int index_tp_delta_dr; /**< index value for delta of decay radiation */
   int index_tp_delta_ur; /**< index value for delta of ultra-relativistic neutrinos/relics */
@@ -310,6 +316,8 @@ struct perturbations
   int index_tp_theta_cdm;   /**< index value for theta of cold dark matter */
   int index_tp_theta_dcdm;  /**< index value for theta of DCDM */
   int index_tp_theta_fld;   /**< index value for theta of dark energy */
+  int index_tp_theta_sfdm_1; /**< index value for first SFDM velocity */
+  int index_tp_theta_sfdm_2; /**< index value for second SFDM velocity */
   int index_tp_theta_scf;   /**< index value for theta of scalar field */
   int index_tp_theta_ur;    /**< index value for theta of ultra-relativistic neutrinos/relics */
   int index_tp_theta_idr;   /**< index value for theta of interacting dark radiation */
@@ -480,6 +488,12 @@ struct perturbations_vector
   int index_pt_delta_fld;  /**< dark energy density in true fluid case */
   int index_pt_theta_fld;  /**< dark energy velocity in true fluid case */
   int index_pt_Gamma_fld;  /**< unique dark energy dynamical variable in PPF case */
+  int index_pt_omega_sfdm_1;  /**< first SFDM perturbation frequency variable */
+  int index_pt_delta_sfdm_1;  /**< first SFDM density perturbation variable */
+  int index_pt_delta1_sfdm_1; /**< first SFDM auxiliary density perturbation */
+  int index_pt_omega_sfdm_2;  /**< second SFDM perturbation frequency variable */
+  int index_pt_delta_sfdm_2;  /**< second SFDM density perturbation variable */
+  int index_pt_delta1_sfdm_2; /**< second SFDM auxiliary density perturbation */
   int index_pt_phi_scf;  /**< scalar field density */
   int index_pt_phi_prime_scf;  /**< scalar field velocity */
   int index_pt_delta_ur; /**< density of ultra-relativistic neutrinos/relics */

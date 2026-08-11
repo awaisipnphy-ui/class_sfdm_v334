@@ -950,6 +950,16 @@ int background_free_input(
     if (pba->scf_parameters != NULL)
       free(pba->scf_parameters);
   }
+
+  if (pba->sfdm_parameters_1 != NULL) {
+    free(pba->sfdm_parameters_1);
+    pba->sfdm_parameters_1 = NULL;
+  }
+
+  if (pba->sfdm_parameters_2 != NULL) {
+    free(pba->sfdm_parameters_2);
+    pba->sfdm_parameters_2 = NULL;
+  }
   return _SUCCESS_;
 }
 

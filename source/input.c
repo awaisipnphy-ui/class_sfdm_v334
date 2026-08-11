@@ -5902,6 +5902,25 @@ int input_default_params(struct background *pba,
 
   /* ** ADDITIONAL SPECIES ** */
 
+  /** 7.3) Scalar-field dark matter */
+  pba->Omega0_sfdm_1 = 0.;
+  pba->attractor_ic_sfdm_1 = _TRUE_;
+  pba->theta_ini_sfdm_1 = 0.;
+  pba->y1_ini_sfdm_1 = 0.;
+  pba->alpha_ini_sfdm_1 = 0.;
+  pba->sfdm_parameters_1 = NULL;
+  pba->sfdm_parameters_size_1 = 0;
+  pba->sfdm_tuning_index_1 = 2;
+
+  pba->Omega0_sfdm_2 = 0.;
+  pba->attractor_ic_sfdm_2 = _TRUE_;
+  pba->theta_ini_sfdm_2 = 0.;
+  pba->y1_ini_sfdm_2 = 0.;
+  pba->alpha_ini_sfdm_2 = 0.;
+  pba->sfdm_parameters_2 = NULL;
+  pba->sfdm_parameters_size_2 = 0;
+  pba->sfdm_tuning_index_2 = 2;
+
   /** 9) Dark energy contributions */
   pba->Omega0_fld = 0.;
   pba->Omega0_scf = 0.;

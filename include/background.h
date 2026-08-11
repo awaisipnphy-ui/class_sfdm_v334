@@ -78,6 +78,26 @@ struct background
   double Gamma_dcdm;      /**< \f$ \Gamma_{dcdm} \f$: decay constant for decaying cold dark matter */
   double tau_dcdm;
 
+  /* Scalar-field dark-matter species. The two copies reproduce the
+     two-component interface of the validated CLASS v2.6.3 code. */
+  double Omega0_sfdm_1;
+  short attractor_ic_sfdm_1;
+  double theta_ini_sfdm_1;
+  double y1_ini_sfdm_1;
+  double alpha_ini_sfdm_1;
+  double * sfdm_parameters_1;
+  int sfdm_parameters_size_1;
+  int sfdm_tuning_index_1;
+
+  double Omega0_sfdm_2;
+  short attractor_ic_sfdm_2;
+  double theta_ini_sfdm_2;
+  double y1_ini_sfdm_2;
+  double alpha_ini_sfdm_2;
+  double * sfdm_parameters_2;
+  int sfdm_parameters_size_2;
+  int sfdm_tuning_index_2;
+
   int N_ncdm;                            /**< Number of distinguishable ncdm species */
   /* the following parameters help to define tabulated ncdm p-s-d passed in file */
   char * ncdm_psd_files;                 /**< list of filenames for tabulated p-s-d */
@@ -173,6 +193,18 @@ struct background
   int index_bg_rho_dcdm;      /**< dcdm density */
   int index_bg_rho_dr;        /**< dr density */
 
+  int index_bg_theta_sfdm_1;  /**< first SFDM angular background variable */
+  int index_bg_y1_sfdm_1;     /**< first SFDM potential background variable */
+  int index_bg_alpha_sfdm_1;  /**< logarithm of the first SFDM density fraction */
+  int index_bg_rho_sfdm_1;    /**< first SFDM energy density */
+  int index_bg_p_sfdm_1;      /**< first SFDM pressure */
+
+  int index_bg_theta_sfdm_2;  /**< second SFDM angular background variable */
+  int index_bg_y1_sfdm_2;     /**< second SFDM potential background variable */
+  int index_bg_alpha_sfdm_2;  /**< logarithm of the second SFDM density fraction */
+  int index_bg_rho_sfdm_2;    /**< second SFDM energy density */
+  int index_bg_p_sfdm_2;      /**< second SFDM pressure */
+
   int index_bg_phi_scf;       /**< scalar field value */
   int index_bg_phi_prime_scf; /**< scalar field derivative wrt conformal time */
   int index_bg_V_scf;         /**< scalar field potential V */
@@ -255,6 +287,12 @@ struct background
   int index_bi_rho_dcdm;/**< {B} dcdm density */
   int index_bi_rho_dr;  /**< {B} dr density */
   int index_bi_rho_fld; /**< {B} fluid density */
+  int index_bi_theta_sfdm_1; /**< {B} first SFDM angular variable */
+  int index_bi_y1_sfdm_1;    /**< {B} first SFDM potential variable */
+  int index_bi_alpha_sfdm_1; /**< {B} first SFDM logarithmic density variable */
+  int index_bi_theta_sfdm_2; /**< {B} second SFDM angular variable */
+  int index_bi_y1_sfdm_2;    /**< {B} second SFDM potential variable */
+  int index_bi_alpha_sfdm_2; /**< {B} second SFDM logarithmic density variable */
   int index_bi_phi_scf;       /**< {B} scalar field value */
   int index_bi_phi_prime_scf; /**< {B} scalar field derivative wrt conformal time */
 
@@ -283,6 +321,8 @@ struct background
   short has_idm;       /**< presence of interacting dark matter with photons, baryons, and idr */
   short has_dcdm;      /**< presence of decaying cold dark matter? */
   short has_dr;        /**< presence of relativistic decay radiation? */
+  short has_sfdm_1;    /**< presence of the first scalar-field dark-matter species? */
+  short has_sfdm_2;    /**< presence of the second scalar-field dark-matter species? */
   short has_scf;       /**< presence of a scalar field? */
   short has_ncdm;      /**< presence of non-cold dark matter? */
   short has_lambda;    /**< presence of cosmological constant? */
@@ -545,6 +585,25 @@ extern "C" {
   int background_output_budget(
                                struct background* pba
                                );
+
+  /** Scalar-field dark-matter auxiliary functions. */
+  double cos_sfdm(
+                  struct background *pba,
+                  double theta_sfdm
+                  );
+
+  double sin_sfdm(
+                  struct background *pba,
+                  double theta_sfdm
+                  );
+
+  double y2_sfdm(
+                 struct background *pba,
+                 double alpha_sfdm,
+                 double theta_sfdm,
+                 double y1_sfdm,
+                 double lambda
+                 );
 
   /** Scalar field potential and its derivatives **/
   double V_scf(
