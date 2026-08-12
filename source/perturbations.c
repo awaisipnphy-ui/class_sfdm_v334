@@ -4440,6 +4440,26 @@ int perturbations_vector_init(
         }
       }
 
+      /* Scalar Field Dark Matter 1 */
+      if (pba->has_sfdm_1 == _TRUE_) {
+        ppv->y[ppv->index_pt_omega_sfdm_1] =
+          ppw->pv->y[ppw->pv->index_pt_omega_sfdm_1];
+        ppv->y[ppv->index_pt_delta_sfdm_1] =
+          ppw->pv->y[ppw->pv->index_pt_delta_sfdm_1];
+        ppv->y[ppv->index_pt_delta1_sfdm_1] =
+          ppw->pv->y[ppw->pv->index_pt_delta1_sfdm_1];
+      }
+
+      /* Scalar Field Dark Matter 2 */
+      if (pba->has_sfdm_2 == _TRUE_) {
+        ppv->y[ppv->index_pt_omega_sfdm_2] =
+          ppw->pv->y[ppw->pv->index_pt_omega_sfdm_2];
+        ppv->y[ppv->index_pt_delta_sfdm_2] =
+          ppw->pv->y[ppw->pv->index_pt_delta_sfdm_2];
+        ppv->y[ppv->index_pt_delta1_sfdm_2] =
+          ppw->pv->y[ppw->pv->index_pt_delta1_sfdm_2];
+      }
+
       if (pba->has_scf == _TRUE_) {
 
         ppv->y[ppv->index_pt_phi_scf] =
