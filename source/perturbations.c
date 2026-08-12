@@ -5313,6 +5313,7 @@ int perturbations_initial_conditions(struct precision * ppr,
   int index_q,n_ncdm,idx;
   double rho_r,rho_m,rho_nu,rho_m_over_rho_r, rho_cdm =0.;
   double fracnu,fracg,fracb,fraccdm = 0.,fracidm = 0.;
+  double fracsfdm_1 = 0.,fracsfdm_2 = 0.;
   double om;
   double ktau_two,ktau_three;
   double f_dr;
@@ -5357,6 +5358,21 @@ int perturbations_initial_conditions(struct precision * ppr,
     rho_m += ppw->pvecback[pba->index_bg_rho_dcdm];
   }
 
+  /* Include each SFDM component in its early-time budget. */
+  if (pba->has_sfdm_1 == _TRUE_) {
+    if (pba->sfdm_parameters_1[1] < 0.)
+      rho_r += ppw->pvecback[pba->index_bg_rho_sfdm_1];
+    else
+      rho_m += ppw->pvecback[pba->index_bg_rho_sfdm_1];
+  }
+
+  if (pba->has_sfdm_2 == _TRUE_) {
+    if (pba->sfdm_parameters_2[1] < 0.)
+      rho_r += ppw->pvecback[pba->index_bg_rho_sfdm_2];
+    else
+      rho_m += ppw->pvecback[pba->index_bg_rho_sfdm_2];
+  }
+
   if (pba->has_dr == _TRUE_) {
     rho_r += ppw->pvecback[pba->index_bg_rho_dr];
     rho_nu += ppw->pvecback[pba->index_bg_rho_dr];
@@ -5399,6 +5415,13 @@ int perturbations_initial_conditions(struct precision * ppr,
 
     /* f_b = Omega_b(t_i) / Omega_m(t_i) */
     fracb = ppw->pvecback[pba->index_bg_rho_b]/rho_m;
+
+    /* f_sfdm = Omega_sfdm(t_i) / Omega_m(t_i) for matter-like SFDM. */
+    if ((pba->has_sfdm_1 == _TRUE_) && (pba->sfdm_parameters_1[1] >= 0.))
+      fracsfdm_1 = ppw->pvecback[pba->index_bg_rho_sfdm_1]/rho_m;
+
+    if ((pba->has_sfdm_2 == _TRUE_) && (pba->sfdm_parameters_2[1] >= 0.))
+      fracsfdm_2 = ppw->pvecback[pba->index_bg_rho_sfdm_2]/rho_m;
 
     /* f_cdm = Omega_cdm(t_i) / Omega_m(t_i) */
     if (pba->has_cdm == _TRUE_)
@@ -5495,6 +5518,58 @@ int perturbations_initial_conditions(struct precision * ppr,
           ppw->pv->y[ppw->pv->index_pt_theta_fld] = - k*ktau_three/4.*pba->cs2_fld/(4.-6.*w_fld+3.*pba->cs2_fld) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC:curvature
         }
         /* if use_ppf == _TRUE_, y[ppw->pv->index_pt_Gamma_fld] will be automatically set to zero, and this is what we want (although one could probably work out some small nonzero initial conditions: TODO) */
+      }
+
+      /* Scalar Field Dark Matter 1 */
+      if (pba->has_sfdm_1 == _TRUE_) {
+        if (pba->sfdm_parameters_1[1] >= 0.) {
+          ppw->pv->y[ppw->pv->index_pt_omega_sfdm_1] =
+            k*k/(pow(a*ppw->pvecback[pba->index_bg_H],2.)*
+                 ppw->pvecback[pba->index_bg_y1_sfdm_1]);
+        }
+        else {
+          ppw->pv->y[ppw->pv->index_pt_omega_sfdm_1] =
+            k*k/(pow(a*ppw->pvecback[pba->index_bg_H],2.)*
+                 exp(ppw->pvecback[pba->index_bg_y1_sfdm_1])*
+                 pow(1.-pba->sfdm_parameters_1[1]*
+                     exp(ppw->pvecback[pba->index_bg_alpha_sfdm_1])*
+                     (1.+cos_sfdm(pba,ppw->pvecback[pba->index_bg_theta_sfdm_1]))/
+                     exp(2.*ppw->pvecback[pba->index_bg_y1_sfdm_1]),0.5));
+        }
+        ppw->pv->y[ppw->pv->index_pt_delta_sfdm_1] =
+          (3./7.)*ppw->pv->y[ppw->pv->index_pt_delta_g]*
+          sin(0.5*ppw->pvecback[pba->index_bg_theta_sfdm_1])*
+          sin(ppw->pvecback[pba->index_bg_theta_sfdm_1]/12.);
+        ppw->pv->y[ppw->pv->index_pt_delta1_sfdm_1] =
+          (3./7.)*ppw->pv->y[ppw->pv->index_pt_delta_g]*
+          sin(0.5*ppw->pvecback[pba->index_bg_theta_sfdm_1])*
+          cos(ppw->pvecback[pba->index_bg_theta_sfdm_1]/12.);
+      }
+
+      /* Scalar Field Dark Matter 2 */
+      if (pba->has_sfdm_2 == _TRUE_) {
+        if (pba->sfdm_parameters_2[1] >= 0.) {
+          ppw->pv->y[ppw->pv->index_pt_omega_sfdm_2] =
+            k*k/(pow(a*ppw->pvecback[pba->index_bg_H],2.)*
+                 ppw->pvecback[pba->index_bg_y1_sfdm_2]);
+        }
+        else {
+          ppw->pv->y[ppw->pv->index_pt_omega_sfdm_2] =
+            k*k/(pow(a*ppw->pvecback[pba->index_bg_H],2.)*
+                 exp(ppw->pvecback[pba->index_bg_y1_sfdm_2])*
+                 pow(1.-pba->sfdm_parameters_2[1]*
+                     exp(ppw->pvecback[pba->index_bg_alpha_sfdm_2])*
+                     (1.+cos_sfdm(pba,ppw->pvecback[pba->index_bg_theta_sfdm_2]))/
+                     exp(2.*ppw->pvecback[pba->index_bg_y1_sfdm_2]),0.5));
+        }
+        ppw->pv->y[ppw->pv->index_pt_delta_sfdm_2] =
+          (3./7.)*ppw->pv->y[ppw->pv->index_pt_delta_g]*
+          sin(0.5*ppw->pvecback[pba->index_bg_theta_sfdm_2])*
+          sin(ppw->pvecback[pba->index_bg_theta_sfdm_2]/12.);
+        ppw->pv->y[ppw->pv->index_pt_delta1_sfdm_2] =
+          (3./7.)*ppw->pv->y[ppw->pv->index_pt_delta_g]*
+          sin(0.5*ppw->pvecback[pba->index_bg_theta_sfdm_2])*
+          cos(ppw->pvecback[pba->index_bg_theta_sfdm_2]/12.);
       }
 
       if (pba->has_scf == _TRUE_) {
