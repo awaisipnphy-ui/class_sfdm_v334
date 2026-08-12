@@ -8912,6 +8912,12 @@ int perturbations_derivs(double tau,
   /* for use with dcdm and dr */
   double f_dr, fprime_dr;
 
+  /* for use with the first quadratic scalar-field dark-matter species */
+  double theta_sfdm_1, omega_sfdm_1;
+  double delta_sfdm_1, delta1_sfdm_1;
+  double sin_theta_sfdm_1, cos_theta_sfdm_1;
+  double w_tot_sfdm_1;
+
   /** - rename the fields of the input structure (just to avoid heavy notations) */
 
   pppaw = (struct perturbations_parameters_and_workspace *)parameters_and_workspace;
@@ -9509,6 +9515,38 @@ int perturbations_derivs(double tau,
         dy[pv->index_pt_Gamma_fld] = ppw->Gamma_prime_fld; /* Gamma variable of PPF formalism */
       }
 
+    }
+
+    /** - ---> first quadratic scalar-field dark-matter species */
+
+    if (pba->has_sfdm_1 == _TRUE_) {
+
+      theta_sfdm_1 = pvecback[pba->index_bg_theta_sfdm_1];
+      omega_sfdm_1 = y[pv->index_pt_omega_sfdm_1];
+      delta_sfdm_1 = y[pv->index_pt_delta_sfdm_1];
+      delta1_sfdm_1 = y[pv->index_pt_delta1_sfdm_1];
+      sin_theta_sfdm_1 = sin_sfdm(pba,theta_sfdm_1);
+      cos_theta_sfdm_1 = cos_sfdm(pba,theta_sfdm_1);
+      w_tot_sfdm_1 =
+        pvecback[pba->index_bg_p_tot]/pvecback[pba->index_bg_rho_tot];
+
+      /* Quadratic limit lambda=0 of the SFDM perturbation equations. */
+      dy[pv->index_pt_omega_sfdm_1] =
+        a_prime_over_a*omega_sfdm_1*(1.5*w_tot_sfdm_1-0.5);
+
+      dy[pv->index_pt_delta_sfdm_1] =
+        -a_prime_over_a*
+        ((3.*sin_theta_sfdm_1
+          +omega_sfdm_1*(1.-cos_theta_sfdm_1))*delta1_sfdm_1
+         -omega_sfdm_1*sin_theta_sfdm_1*delta_sfdm_1)
+        -metric_continuity*(1.-cos_theta_sfdm_1);
+
+      dy[pv->index_pt_delta1_sfdm_1] =
+        -a_prime_over_a*
+        ((3.*cos_theta_sfdm_1
+          +omega_sfdm_1*sin_theta_sfdm_1)*delta1_sfdm_1
+         -omega_sfdm_1*(1.+cos_theta_sfdm_1)*delta_sfdm_1)
+        -metric_continuity*sin_theta_sfdm_1;
     }
 
     /** - ---> scalar field (scf) */
