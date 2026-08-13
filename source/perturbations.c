@@ -7617,6 +7617,8 @@ int perturbations_sources(
   double * pvecmetric;
 
   double delta_g, delta_rho_scf, rho_plus_p_theta_scf;
+  double theta_bg_sfdm_1, sin_theta_sfdm_1, cutoff_sfdm_1;
+  double one_minus_cos_theta_sfdm_1, theta_source_sfdm_1;
   double a_prime_over_a=0.;  /* (a'/a) */
   double a_prime_over_a_prime=0.;  /* (a'/a)' */
   double w_fld,dw_over_da_fld,integral_fld;
@@ -8025,6 +8027,18 @@ int perturbations_sources(
         + 3.*a_prime_over_a*(1.+pvecback[pba->index_bg_w_fld])*theta_over_k2; // N-body gauge correction
     }
 
+    /* delta_sfdm_1 */
+    if (ppt->has_source_delta_sfdm_1 == _TRUE_) {
+      theta_bg_sfdm_1 = pvecback[pba->index_bg_theta_sfdm_1];
+      cutoff_sfdm_1 = 0.5*(1.-tanh(theta_bg_sfdm_1-30.*_PI_));
+      one_minus_cos_theta_sfdm_1 =
+        (1.-cutoff_sfdm_1)
+        +2.*cutoff_sfdm_1*pow(sin(0.5*theta_bg_sfdm_1),2);
+      _set_source_(ppt->index_tp_delta_sfdm_1) =
+        y[ppw->pv->index_pt_delta_sfdm_1]
+        +3.*a_prime_over_a*one_minus_cos_theta_sfdm_1*theta_over_k2;
+    }
+
     /* delta_scf */
     if (ppt->has_source_delta_scf == _TRUE_) {
       if (ppt->gauge == synchronous){
@@ -8142,6 +8156,23 @@ int perturbations_sources(
 
       _set_source_(ppt->index_tp_theta_fld) = ppw->rho_plus_p_theta_fld/(1.+w_fld)/pvecback[pba->index_bg_rho_fld]
         + theta_shift; // N-body gauge correction
+    }
+
+    /* theta_sfdm_1 */
+    if (ppt->has_source_theta_sfdm_1 == _TRUE_) {
+      theta_bg_sfdm_1 = pvecback[pba->index_bg_theta_sfdm_1];
+      sin_theta_sfdm_1 = sin_sfdm(pba,theta_bg_sfdm_1);
+      cutoff_sfdm_1 = 0.5*(1.-tanh(theta_bg_sfdm_1-30.*_PI_));
+      one_minus_cos_theta_sfdm_1 =
+        (1.-cutoff_sfdm_1)
+        +2.*cutoff_sfdm_1*pow(sin(0.5*theta_bg_sfdm_1),2);
+      theta_source_sfdm_1 = k*k*
+        (-y[ppw->pv->index_pt_delta_sfdm_1]*sin_theta_sfdm_1
+         +y[ppw->pv->index_pt_delta1_sfdm_1]*one_minus_cos_theta_sfdm_1)
+        /(a_prime_over_a*pvecback[pba->index_bg_y1_sfdm_1]
+          *one_minus_cos_theta_sfdm_1);
+      _set_source_(ppt->index_tp_theta_sfdm_1) =
+        theta_source_sfdm_1+theta_shift;
     }
 
     /* theta_scf */
