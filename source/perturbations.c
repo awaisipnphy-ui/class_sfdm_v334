@@ -2970,6 +2970,7 @@ int perturbations_solve(
   int * previous_approx;
 
   int n_ncdm,is_early_enough;
+  double m_sfdm_over_H_1;
 
   /* function pointer to ODE evolver and names of possible evolvers */
 
@@ -3084,6 +3085,14 @@ int perturbations_solve(
         if (fabs(ppw->pvecback[pba->index_bg_p_ncdm1+n_ncdm]/ppw->pvecback[pba->index_bg_rho_ncdm1+n_ncdm]-1./3.) > ppr->tol_ncdm_initial_w)
           is_early_enough = _FALSE_;
       }
+    }
+
+    /* Quadratic SFDM initial conditions require m/H = |y1|/2 << 1. */
+    if (pba->has_sfdm_1 == _TRUE_) {
+      m_sfdm_over_H_1 =
+        0.5*fabs(ppw->pvecback[pba->index_bg_y1_sfdm_1]);
+      if (m_sfdm_over_H_1 > 1.e-2)
+        is_early_enough = _FALSE_;
     }
 
     /* also check that the two conditions on (aH/kappa') and (aH/k) are fulfilled */
