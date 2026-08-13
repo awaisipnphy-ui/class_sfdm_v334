@@ -6910,6 +6910,12 @@ int perturbations_total_stress_energy(
   double gwncdm;
   double rho_relativistic;
   double rho_dr_over_f;
+  /* first quadratic scalar-field dark-matter species */
+  double rho_sfdm_1, p_sfdm_1;
+  double theta_bg_sfdm_1, y1_bg_sfdm_1;
+  double delta_sfdm_1, delta1_sfdm_1;
+  double sin_theta_sfdm_1, cos_theta_sfdm_1;
+  double delta_rho_sfdm_1, delta_p_sfdm_1, rho_plus_p_theta_sfdm_1;
   double delta_rho_scf, delta_p_scf, psi;
   /** Variables used for FLD and PPF */
   double c_gamma_k_H_square;
@@ -7293,7 +7299,46 @@ int perturbations_total_stress_energy(
 
     }
 
-    /* add your extra species here */
+    /* first quadratic scalar-field dark-matter contribution */
+    if (pba->has_sfdm_1 == _TRUE_) {
+
+      class_test(ppt->gauge != synchronous,
+                 ppt->error_message,
+                 "quadratic SFDM perturbations currently support only synchronous gauge");
+
+      rho_sfdm_1 = ppw->pvecback[pba->index_bg_rho_sfdm_1];
+      p_sfdm_1 = ppw->pvecback[pba->index_bg_p_sfdm_1];
+      theta_bg_sfdm_1 = ppw->pvecback[pba->index_bg_theta_sfdm_1];
+      y1_bg_sfdm_1 = ppw->pvecback[pba->index_bg_y1_sfdm_1];
+      delta_sfdm_1 = y[ppw->pv->index_pt_delta_sfdm_1];
+      delta1_sfdm_1 = y[ppw->pv->index_pt_delta1_sfdm_1];
+      sin_theta_sfdm_1 = sin_sfdm(pba,theta_bg_sfdm_1);
+      cos_theta_sfdm_1 = cos_sfdm(pba,theta_bg_sfdm_1);
+
+      delta_rho_sfdm_1 = rho_sfdm_1*delta_sfdm_1;
+      delta_p_sfdm_1 = rho_sfdm_1*
+        (delta1_sfdm_1*sin_theta_sfdm_1
+         -delta_sfdm_1*cos_theta_sfdm_1);
+      rho_plus_p_theta_sfdm_1 = k2*rho_sfdm_1*
+        (-delta_sfdm_1*sin_theta_sfdm_1
+         +delta1_sfdm_1*(1.-cos_theta_sfdm_1))
+        /(a_prime_over_a*y1_bg_sfdm_1);
+
+      ppw->delta_rho += delta_rho_sfdm_1;
+      ppw->rho_plus_p_theta += rho_plus_p_theta_sfdm_1;
+      ppw->delta_p += delta_p_sfdm_1;
+      ppw->rho_plus_p_tot += rho_sfdm_1+p_sfdm_1;
+
+      if (ppt->has_source_delta_m == _TRUE_) {
+        delta_rho_m += delta_rho_sfdm_1;
+        rho_m += rho_sfdm_1;
+      }
+      if ((ppt->has_source_delta_m == _TRUE_) ||
+          (ppt->has_source_theta_m == _TRUE_)) {
+        rho_plus_p_theta_m += rho_plus_p_theta_sfdm_1;
+        rho_plus_p_m += rho_sfdm_1+p_sfdm_1;
+      }
+    }
 
     /* fluid contribution */
     if (pba->has_fld == _TRUE_) {
