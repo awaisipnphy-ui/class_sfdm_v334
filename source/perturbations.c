@@ -3382,6 +3382,10 @@ int perturbations_prepare_k_output(struct background * pba,
       class_store_columntitle(ppt->scalar_titles, "delta_dr", pba->has_dr);
       class_store_columntitle(ppt->scalar_titles, "theta_dr", pba->has_dr);
       class_store_columntitle(ppt->scalar_titles, "shear_dr", pba->has_dr);
+      /* First quadratic scalar-field dark-matter species */
+      class_store_columntitle(ppt->scalar_titles, "delta_sfdm_1", pba->has_sfdm_1);
+      class_store_columntitle(ppt->scalar_titles, "theta_sfdm_1", pba->has_sfdm_1);
+      class_store_columntitle(ppt->scalar_titles, "omega_sfdm_1", pba->has_sfdm_1);
       /* Scalar field scf */
       class_store_columntitle(ppt->scalar_titles, "delta_scf", pba->has_scf);
       class_store_columntitle(ppt->scalar_titles, "theta_scf", pba->has_scf);
@@ -8332,6 +8336,9 @@ int perturbations_print_variables(double tau,
   double delta_dr=0.,theta_dr=0.,shear_dr=0., f_dr=1.0;
   double delta_ur=0.,theta_ur=0.,shear_ur=0.,l4_ur=0.;
   double delta_idr=0., theta_idr=0., shear_idr=0.;
+  double delta_sfdm_1=0., theta_sfdm_1=0., omega_sfdm_1=0.;
+  double theta_bg_sfdm_1=0., sin_theta_sfdm_1=0.;
+  double cutoff_sfdm_1=0., one_minus_cos_theta_sfdm_1=0.;
   double delta_rho_scf=0., rho_plus_p_theta_scf=0.;
   double delta_scf=0., theta_scf=0.;
   /** - ncdm sector begins */
@@ -8607,6 +8614,22 @@ int perturbations_print_variables(double tau,
       shear_dr = y[ppw->pv->index_pt_F0_dr+2]*0.5/f_dr;
     }
 
+    if (pba->has_sfdm_1 == _TRUE_) {
+      delta_sfdm_1 = y[ppw->pv->index_pt_delta_sfdm_1];
+      omega_sfdm_1 = y[ppw->pv->index_pt_omega_sfdm_1];
+      theta_bg_sfdm_1 = pvecback[pba->index_bg_theta_sfdm_1];
+      sin_theta_sfdm_1 = sin_sfdm(pba,theta_bg_sfdm_1);
+      cutoff_sfdm_1 = 0.5*(1.-tanh(theta_bg_sfdm_1-30.*_PI_));
+      one_minus_cos_theta_sfdm_1 =
+        (1.-cutoff_sfdm_1)
+        +2.*cutoff_sfdm_1*pow(sin(0.5*theta_bg_sfdm_1),2);
+      theta_sfdm_1 = k*k*
+        (-delta_sfdm_1*sin_theta_sfdm_1
+         +y[ppw->pv->index_pt_delta1_sfdm_1]*one_minus_cos_theta_sfdm_1)
+        /(a*H*pvecback[pba->index_bg_y1_sfdm_1]
+          *one_minus_cos_theta_sfdm_1);
+    }
+
     if (pba->has_scf == _TRUE_){
       if (ppt->gauge == synchronous){
         delta_rho_scf =  1./3.*
@@ -8693,6 +8716,11 @@ int perturbations_print_variables(double tau,
         theta_dcdm += k*k*alpha;
       }
 
+      if (pba->has_sfdm_1 == _TRUE_) {
+        delta_sfdm_1 -= 3.*a*H*one_minus_cos_theta_sfdm_1*alpha;
+        theta_sfdm_1 += k*k*alpha;
+      }
+
       if (pba->has_scf == _TRUE_) {
         delta_scf += alpha*(-3.0*H*(1.0+pvecback[pba->index_bg_p_scf]/pvecback[pba->index_bg_rho_scf]));
         theta_scf += k*k*alpha;
@@ -8764,6 +8792,10 @@ int perturbations_print_variables(double tau,
     class_store_double(dataptr, delta_dr, pba->has_dr, storeidx);
     class_store_double(dataptr, theta_dr, pba->has_dr, storeidx);
     class_store_double(dataptr, shear_dr, pba->has_dr, storeidx);
+    /* First quadratic scalar-field dark-matter species */
+    class_store_double(dataptr, delta_sfdm_1, pba->has_sfdm_1, storeidx);
+    class_store_double(dataptr, theta_sfdm_1, pba->has_sfdm_1, storeidx);
+    class_store_double(dataptr, omega_sfdm_1, pba->has_sfdm_1, storeidx);
     /* Scalar field scf*/
     class_store_double(dataptr, delta_scf, pba->has_scf, storeidx);
     class_store_double(dataptr, theta_scf, pba->has_scf, storeidx);
