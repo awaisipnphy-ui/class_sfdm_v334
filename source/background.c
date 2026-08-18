@@ -614,9 +614,9 @@ int background_functions(
     /* Add d p_sfdm/d ln(a), including the smooth cutoff derivative. */
     theta_prime_sfdm_1 = -3.*sin_sfdm(pba,theta_sfdm_1)
       +pvecback_B[pba->index_bi_y1_sfdm_1];
-    cutoff_tanh_sfdm_1 = tanh(theta_sfdm_1-30.*_PI_);
+    cutoff_tanh_sfdm_1 = tanh(theta_sfdm_1*theta_sfdm_1-100.*100.);
     dw_dtheta_sfdm_1 =
-      0.5*(1.-cutoff_tanh_sfdm_1*cutoff_tanh_sfdm_1)*cos(theta_sfdm_1)
+      theta_sfdm_1*(1.-cutoff_tanh_sfdm_1*cutoff_tanh_sfdm_1)*cos(theta_sfdm_1)
       +sin_sfdm(pba,theta_sfdm_1);
     dp_dloga += (dw_dtheta_sfdm_1*theta_prime_sfdm_1
                  -3.*w_sfdm_1*(1.+w_sfdm_1))*rho_sfdm_1;
@@ -3035,20 +3035,19 @@ int background_output_budget(
 }
 
 /**
- * Smooth trigonometric cutoff of Eq. (22) in arXiv:2307.05600.
- * The validated starting choice theta_star=30 pi is an integer multiple of
- * pi, as recommended by Eqs. (34)-(35) and the numerical tests in the paper.
+ * Legacy v2.6.3 trigonometric cutoff.
+ * Final legacy cutoff: theta_thresh=100 and theta_tol=1 as in v2.6.3.
  */
 double cos_sfdm(
                 struct background *pba,
                 double theta_sfdm
                 ) {
 
-  const double theta_star = 30.*_PI_;
+  const double theta_thresh = 1.e2;
   double cutoff;
 
   (void)pba;
-  cutoff = 0.5*(1.-tanh(theta_sfdm-theta_star));
+  cutoff = 0.5*(1.-tanh(theta_sfdm*theta_sfdm-theta_thresh*theta_thresh));
   return cutoff*cos(theta_sfdm);
 }
 
@@ -3057,11 +3056,11 @@ double sin_sfdm(
                 double theta_sfdm
                 ) {
 
-  const double theta_star = 30.*_PI_;
+  const double theta_thresh = 1.e2;
   double cutoff;
 
   (void)pba;
-  cutoff = 0.5*(1.-tanh(theta_sfdm-theta_star));
+  cutoff = 0.5*(1.-tanh(theta_sfdm*theta_sfdm-theta_thresh*theta_thresh));
   return cutoff*sin(theta_sfdm);
 }
 
