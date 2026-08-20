@@ -1,0 +1,14 @@
+name: sfdm_v334
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.10
+  - pip
+
+  - pip:
+      - numpy==1.26.4
+      - Cython==3.2.9
+      - cobaya==3.6.2

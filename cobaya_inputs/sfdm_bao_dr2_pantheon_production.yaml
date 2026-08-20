@@ -1,0 +1,119 @@
+theory:
+  classy:
+    path: global
+    stop_at_error: false
+
+    extra_args:
+      attractor_ic_sfdm_1: "yes"
+
+      N_ur: 2.0328
+      N_ncdm: 1
+      m_ncdm: 0.06
+      T_ncdm: 0.71611
+      T_cmb: 2.7255
+
+      Omega_cdm: 0.0001
+      Omega_k: 0.0
+      Omega_fld: 0.0
+      Omega_scf: 0.0
+
+      YHe: BBN
+      recombination: RECFAST
+      recfast_photoion_dependence: Tmat
+      reio_parametrization: reio_camb
+
+likelihood:
+  bao.desi_dr2: null
+  sn.pantheon: null
+
+params:
+  Omega_sfdm_1:
+    prior:
+      min: 0.0
+      max: 1.0
+    ref:
+      dist: norm
+      loc: 0.261205693250012
+      scale: 0.01
+    proposal: 0.01
+    latex: '\Omega_{\rm sfdm}'
+
+  log10_m_sfdm:
+    prior:
+      min: -24.0
+      max: -17.0
+    ref:
+      dist: norm
+      loc: -22.0
+      scale: 0.5
+    proposal: 0.5
+    drop: true
+    latex: '\log_{10}(m_\phi/{\rm eV})'
+
+  sfdm_parameters_1:
+    value: "lambda log10_m_sfdm: '%g, 0.0, 1.e-2' % log10_m_sfdm"
+    derived: false
+
+  sfdm_tuning_index_1: 2
+
+  omega_b:
+    prior:
+      min: 0.005
+      max: 0.1
+    ref:
+      dist: norm
+      loc: 0.0223828
+      scale: 0.0002
+    proposal: 0.0003
+    latex: '\Omega_b h^2'
+
+  H0:
+    prior:
+      min: 20.0
+      max: 100.0
+    ref:
+      dist: norm
+      loc: 67.81
+      scale: 0.5
+    proposal: 0.5
+    latex: 'H_0'
+
+  A_s: 2.1005829616811546e-9
+  n_s: 0.96605
+  tau_reio: 0.054
+
+  Omega_m:
+    latex: '\Omega_m'
+
+  Omega_Lambda:
+    latex: '\Omega_\Lambda'
+
+  rs_drag:
+    latex: 'r_{\rm drag}'
+
+  age:
+    latex: '{\rm Age}/{\rm Gyr}'
+
+sampler:
+  mcmc:
+    burn_in: 10d
+    max_tries: 100d
+
+    proposal_scale: 2.4
+    learn_proposal: true
+    learn_every: 40d
+
+    max_samples: .inf
+    Rminus1_stop: 0.01
+    Rminus1_cl_stop: 0.2
+    Rminus1_cl_level: 0.95
+
+    measure_speeds: true
+    oversample_power: 0
+    drag: false
+
+    output_every: 60s
+
+output: cobaya_runs/production/sfdm_bao_dr2_pantheon
+
+timing: true
