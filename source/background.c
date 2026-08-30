@@ -399,7 +399,7 @@ int background_functions(
   /* quadratic scalar-field dark-matter quantities */
   double theta_sfdm_1, alpha_sfdm_1, Omega_sfdm_1;
   double rho_other, rho_sfdm_1, p_sfdm_1, w_sfdm_1;
-  double theta_prime_sfdm_1, dw_dtheta_sfdm_1, cutoff_tanh_sfdm_1;
+  double theta_prime_sfdm_1, dw_dtheta_sfdm_1, cutoff_sfdm_1;
   /* scalar field quantities */
   double phi, phi_prime;
   /* Since we only know a_prime_over_a after we have rho_tot,
@@ -614,10 +614,10 @@ int background_functions(
     /* Add d p_sfdm/d ln(a), including the smooth cutoff derivative. */
     theta_prime_sfdm_1 = -3.*sin_sfdm(pba,theta_sfdm_1)
       +pvecback_B[pba->index_bi_y1_sfdm_1];
-    cutoff_tanh_sfdm_1 = tanh(theta_sfdm_1*theta_sfdm_1-100.*100.);
+    cutoff_sfdm_1 = cutoff_sfdm(pba,theta_sfdm_1);
     dw_dtheta_sfdm_1 =
-      theta_sfdm_1*(1.-cutoff_tanh_sfdm_1*cutoff_tanh_sfdm_1)*cos(theta_sfdm_1)
-      +sin_sfdm(pba,theta_sfdm_1);
+      4.*theta_sfdm_1*cutoff_sfdm_1*(1.-cutoff_sfdm_1)*cos(theta_sfdm_1)
+      +cutoff_sfdm_1*sin(theta_sfdm_1);
     dp_dloga += (dw_dtheta_sfdm_1*theta_prime_sfdm_1
                  -3.*w_sfdm_1*(1.+w_sfdm_1))*rho_sfdm_1;
   }
@@ -3035,20 +3035,28 @@ int background_output_budget(
 }
 
 /**
- * Legacy v2.6.3 trigonometric cutoff.
- * Final legacy cutoff: theta_thresh=100 and theta_tol=1 as in v2.6.3.
+ * Smooth SFDM trigonometric cutoff from Eq. (2.18) of
+ * arXiv:1511.08195, with theta_star=100.
  */
+double cutoff_sfdm(
+                   struct background *pba,
+                   double theta_sfdm
+                   ) {
+
+  const double theta_thresh = 1.e2;
+
+  (void)pba;
+  return 0.5*(1.-tanh(
+    theta_sfdm*theta_sfdm-theta_thresh*theta_thresh
+  ));
+}
+
 double cos_sfdm(
                 struct background *pba,
                 double theta_sfdm
                 ) {
 
-  const double theta_thresh = 1.e2;
-  double cutoff;
-
-  (void)pba;
-  cutoff = 0.5*(1.-tanh(theta_sfdm*theta_sfdm-theta_thresh*theta_thresh));
-  return cutoff*cos(theta_sfdm);
+  return cutoff_sfdm(pba,theta_sfdm)*cos(theta_sfdm);
 }
 
 double sin_sfdm(
@@ -3056,12 +3064,20 @@ double sin_sfdm(
                 double theta_sfdm
                 ) {
 
-  const double theta_thresh = 1.e2;
+  return cutoff_sfdm(pba,theta_sfdm)*sin(theta_sfdm);
+}
+
+double one_minus_cos_sfdm(
+                           struct background *pba,
+                           double theta_sfdm
+                           ) {
+
   double cutoff;
 
-  (void)pba;
-  cutoff = 0.5*(1.-tanh(theta_sfdm*theta_sfdm-theta_thresh*theta_thresh));
-  return cutoff*sin(theta_sfdm);
+  cutoff = cutoff_sfdm(pba,theta_sfdm);
+
+  return (1.-cutoff)
+    +2.*cutoff*pow(sin(0.5*theta_sfdm),2);
 }
 
 /**

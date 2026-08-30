@@ -587,6 +587,11 @@ extern "C" {
                                );
 
   /** Scalar-field dark-matter auxiliary functions. */
+  double cutoff_sfdm(
+                      struct background *pba,
+                      double theta_sfdm
+                      );
+
   double cos_sfdm(
                   struct background *pba,
                   double theta_sfdm
@@ -596,6 +601,11 @@ extern "C" {
                   struct background *pba,
                   double theta_sfdm
                   );
+
+  double one_minus_cos_sfdm(
+                             struct background *pba,
+                             double theta_sfdm
+                             );
 
   double y2_sfdm(
                  struct background *pba,
